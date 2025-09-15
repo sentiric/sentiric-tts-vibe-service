@@ -14,10 +14,13 @@ WORKDIR /app
 # Python'a modülleri mevcut klasörden araması için zorla talimat ver.
 ENV PYTHONPATH=/app
 
-# Gerekli sistem bağımlılıklarını kur
-RUN apt-get update && apt-get install -y \
+# --- Çalışma zamanı sistem bağımlılıkları ---
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    netcat-openbsd \
+    curl \
+    ca-certificates \
     espeak-ng \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*    
 
 # Python kütüphanelerini kur
 COPY requirements.txt .
