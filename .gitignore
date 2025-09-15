@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+# Ortam dosyaları
+.env
+!.env.example          # örnek config dosyasını tut
+
+# Çalışma zamanı veya geçici dosyalar
+.env.generated
+.profile.state

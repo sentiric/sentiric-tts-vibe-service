@@ -1,0 +1,56 @@
+# docker-compose.dev.yml
+# Service Geliştirme ortamı
+
+networks:
+  sentiric-net:
+    name: "${NETWORK_NAME:-sentiric-net}"
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET}
+          gateway: ${NETWORK_GATEWAY}
+
+volumes:
+  # [capability-tts]: Konuşma Sentezleme Yetenekleri (TTS Capabilities)
+  # --------------------------------------------------  
+  tts_cache:
+
+services:
+  # [capability-tts]: Konuşma Sentezleme Yetenekleri (TTS Capabilities)
+  # -------------------------------------------------- 
+  tts-vibe-service:
+    # --- İMAJ SEÇİMİ (EN ÖNEMLİ KISIM) ---
+    # Ortamınıza göre doğru imajı seçin. GitHub Actions CI/CD sürecinizde
+    # hem CPU (-cpu) hem de GPU (-gpu) için ayrı etiketli imajlar üretilmelidir.
+    # Örnek: ghcr.io/sentiric/sentiric-tts-vibe-service:latest-cpu
+    #        ghcr.io/sentiric/sentiric-tts-vibe-service:latest-gpu
+    #
+    # TAG ortam değişkeni ile bu dinamik olarak yönetilebilir.
+    # Örnek: TAG=latest-cpu make start PROFILE=prod
+    image: ghcr.io/sentiric/sentiric-tts-vibe-service:${TAG:-latest-cpu}
+
+    # --- GPU KAYNAK AYARLARI (Sadece GPU ortamında gereklidir) ---
+    # Eğer GPU imajını (`:latest-gpu` gibi) kullanıyorsanız ve sunucunuzda
+    # NVIDIA Container Toolkit kurulu ise, bu bölümü aktif hale getirin.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1 # veya 'all'
+    #           capabilities: [gpu]
+    env_file: ["${ENV_FILE_PATH}"]
+    volumes: 
+      - "${CONFIG_REPO_PATH}:/sentiric-config:ro"
+      - "${CERTIFICATES_REPO_PATH}:/sentiric-certificates:ro"
+      - "${ASSETS_REPO_PATH}:/sentiric-assets:ro"
+      - ./app:/app
+      - tts_cache:/root/.cache/huggingface      
+    ports: 
+      - "14050:${TTS_VIBE_SERVICE_HTTP_PORT:-14050}"
+      - "14051:${TTS_VIBE_SERVICE_GRPC_PORT:-14051}"
+      - "14052:${TTS_VIBE_SERVICE_METRICS_PORT:-14052}"        
+    networks:
+      sentiric-net:
+        ipv4_address: ${TTS_VIBE_SERVICE_IPV4_ADDRESS}       
+    restart: always
