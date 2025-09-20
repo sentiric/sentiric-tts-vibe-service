@@ -30,4 +30,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./app .
 
 # Sunucuyu başlat
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "14050"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050"]

@@ -35,7 +35,8 @@
             statusDiv.innerText = 'Lütfen bekleyin, model sesi oluşturuyor...';
             audioPlayer.src = '';
             try {
-                const response = await fetch('/synthesize', { // URL GÜNCELLENDİ
+                // DEĞİŞİKLİK: API yolu artık /api/v1 içeriyor.
+                const response = await fetch('/api/v1/synthesize', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: text, language: 'tr' })

@@ -1,40 +1,38 @@
+# sentiric-tts-vibe-service/app/core/tts_engine.py
 import torch
 import os
-# --- DEĞİŞİKLİK BURADA ---
-# "app." öneklerini buradan da kaldırıyoruz ki her şey tutarlı olsun.
-from models.modeling_vibevoice import VibeVoiceModel
-from models.tokenization_vibevoice import VibeVoiceTokenizer
-# --- DEĞİŞİKLİK BİTTİ ---
+import structlog
+# DEĞİŞİKLİK: Standart import yolları
+from app.models.modeling_vibevoice import VibeVoiceModel
+from app.models.tokenization_vibevoice import VibeVoiceTokenizer
 
 # Global değişkenler
 model = None
 tokenizer = None
 device = "cuda" if torch.cuda.is_available() else "cpu"
+log = structlog.get_logger(__name__) # Logger'ı burada alalım
 
 def load_model():
     """Modeli ve tokenizer'ı belleğe yükler."""
     global model, tokenizer
     if model is None or tokenizer is None:
-        print("Uygulama başlıyor, model ve tokenizer YEREL KAYNAKTAN yükleniyor...")
+        log.info("Uygulama başlıyor, VibeVoice modeli YEREL KAYNAKTAN yükleniyor...")
         try:
             model_id = "microsoft/VibeVoice-1.5B"
-            # Projemizin içindeki 'app/models' klasörünün yolunu buluyoruz
             models_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
             
-            print(f"'{model_id}' ağırlıkları YEREL 'VibeVoiceModel' sınıfı ile yükleniyor...")
+            log.info(f"'{model_id}' ağırlıkları YEREL 'VibeVoiceModel' sınıfı ile yükleniyor...")
             model = VibeVoiceModel.from_pretrained(model_id).to(device)
             
-            print(f"Tokenizer'ı YEREL dizinden ('{models_dir}') yüklüyor...")
-            # Tokenizer'a dosyaların nerede olduğunu doğrudan söylüyoruz.
+            log.info(f"Tokenizer'ı YEREL dizinden ('{models_dir}') yüklüyor...")
             tokenizer = VibeVoiceTokenizer.from_pretrained(models_dir)
             
-            print(f"Model {device} üzerine başarıyla yüklendi!")
+            log.info(f"Model {device} üzerine başarıyla yüklendi!")
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            log.critical("Model yüklenirken kritik bir hata oluştu.", error=str(e), exc_info=True)
             raise RuntimeError(f"Model yüklenirken kritik bir hata oluştu: {e}")
     else:
-        print("Model zaten yüklü.")
+        log.info("Model zaten yüklü.")
 
 def unload_model():
     """Modeli ve tokenizer'ı bellekten temizler."""
@@ -43,11 +41,15 @@ def unload_model():
     tokenizer = None
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    print("Model bellekten temizlendi.")
+    log.info("Model bellekten temizlendi.")
+
+def is_model_loaded() -> bool:
+    """Modelin yüklenip yüklenmediğini kontrol eder."""
+    return model is not None and tokenizer is not None
 
 def synthesize(text: str, language: str):
     """Verilen metni sese dönüştürür."""
-    if not model or not tokenizer:
+    if not is_model_loaded():
         raise Exception("Model is not loaded.")
     
     inputs = tokenizer(text, return_tensors="pt").to(device)
