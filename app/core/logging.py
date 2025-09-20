@@ -4,6 +4,9 @@ import sys
 import structlog
 
 def setup_logging(log_level: str, env: str):
+    """
+    Uygulama genelinde standartlaştırılmış, ortama duyarlı loglamayı yapılandırır.
+    """
     log_level = log_level.upper()
 
     shared_processors = [
@@ -30,6 +33,7 @@ def setup_logging(log_level: str, env: str):
         cache_logger_on_first_use=True,
     )
 
+    # Uvicorn loglarını da structlog üzerinden yönlendir
     handler = logging.StreamHandler(sys.stdout)
     
     root_logger = logging.getLogger()
@@ -41,4 +45,5 @@ def setup_logging(log_level: str, env: str):
         uvicorn_logger.handlers = [] 
         uvicorn_logger.propagate = True
 
-logger = structlog.get_logger()
+# Bu satırı kaldırıyoruz çünkü logger artık her modülde `structlog.get_logger()` ile alınacak.
+# logger = structlog.get_logger()

@@ -2,9 +2,11 @@
 import torch
 import os
 import structlog
-# DEĞİŞİKLİK: Standart import yolları
+# --- DEĞİŞİKLİK BURADA ---
 from app.models.modeling_vibevoice import VibeVoiceModel
 from app.models.tokenization_vibevoice import VibeVoiceTokenizer
+# --- DEĞİŞİKLİK BİTTİ ---
+
 
 # Global değişkenler
 model = None

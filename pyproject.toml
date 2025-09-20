@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentiric-tts-vibe-service"
+version = "0.1.0"
+description = "Expert TTS engine using VibeVoice for the Sentiric Platform."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv",
+    "structlog",
+    "colorama", # structlog'un renkli konsol çıktısı için
+    "torch>=2.0.0",
+    "scipy",
+    "accelerate",
+    "phonemizer",
+    "einops",
+    "transformers>=4.41.0",
+    "Jinja2",
+    "protobuf"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "httpx",
+    "pytest-asyncio",
+]
+
+# BU BÖLÜM KRİTİK: Python'a 'app' klasörünün bir paket olduğunu söylüyoruz.
+[tool.setuptools]
+packages = ["app"]

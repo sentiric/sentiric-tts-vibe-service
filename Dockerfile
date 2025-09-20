@@ -1,18 +1,24 @@
+# sentiric-tts-vibe-service/Dockerfile
 # Dockerfile
 
-FROM python:3.11-slim
 # --- GLOBAL BUILD ARGÜMANLARI ---
 ARG PYTHON_VERSION=3.11
 ARG BASE_IMAGE_TAG=${PYTHON_VERSION}-slim-bullseye
-ARG PYTORCH_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cpu"
 ARG GIT_COMMIT="unknown"
 ARG BUILD_DATE="unknown"
 ARG SERVICE_VERSION="0.0.0"
+
+# --- STAGE 1: Production ---
+FROM python:${BASE_IMAGE_TAG}
+
 WORKDIR /app
 
-# --- BU SATIRI EKLE ---
-# Python'a modülleri mevcut klasörden araması için zorla talimat ver.
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app \
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
+    PIP_NO_CACHE_DIR=1 \
+    GIT_COMMIT=${GIT_COMMIT} \
+    BUILD_DATE=${BUILD_DATE} \
+    SERVICE_VERSION=${SERVICE_VERSION}
 
 # --- Çalışma zamanı sistem bağımlılıkları ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,12 +28,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     espeak-ng \
     && rm -rf /var/lib/apt/lists/*    
 
-# Python kütüphanelerini kur
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Proje dosyalarını kopyala
+COPY pyproject.toml .
+COPY app ./app
+COPY README.md .
 
-# Uygulama kodunu kopyala
-COPY ./app .
+# Projeyi ve bağımlılıklarını `pyproject.toml` kullanarak kur
+RUN pip install .
+
+# Güvenlik için root olmayan kullanıcı oluştur
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --no-create-home --uid 1001 --ingroup appgroup appuser
+
+# Sahipliği yeni kullanıcıya ver
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 # Sunucuyu başlat
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050", "--no-access-log"]

@@ -8,7 +8,7 @@ import uuid
 import structlog
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
-# DEĞİŞİKLİK: Standart import yolları kullanılıyor
+# Standart import yolları kullanılıyor
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core import tts_engine
@@ -48,8 +48,7 @@ async def logging_middleware(request: Request, call_next) -> Response:
     log = structlog.get_logger(__name__)
     clear_contextvars()
     
-    # Health check'leri log gürültüsünden ayıklayalım
-    if request.url.path in ["/health", "/healthz"]:
+    if request.url.path in ["/health", "/healthz", "/info"]:
         return await call_next(request)
         
     trace_id = request.headers.get("X-Trace-ID") or f"tts-vibe-trace-{uuid.uuid4()}"
@@ -75,12 +74,24 @@ async def read_root():
 
 # Standart Health Check Endpoint'i
 @app.get("/health", tags=["Health"])
-async def health_check():
+async def health_check(request: Request):
     is_ready = tts_engine.is_model_loaded()
     status_code = 200 if is_ready else 503
+    
+    response_data = {
+        "status": "ok" if is_ready else "loading_model",
+        "model_ready": is_ready,
+        "project": settings.PROJECT_NAME,
+        "version": settings.SERVICE_VERSION,
+    }
+    
+    if not is_ready:
+        log = structlog.get_logger(__name__)
+        log.warn("Health check: Model henüz hazır değil, 503 yanıtı veriliyor.", **response_data)
+    
     return Response(
+        content=str(response_data),
         status_code=status_code,
-        content=f'{{"status": "ok" if is_ready else "loading_model", "model_ready": {str(is_ready).lower()}}}',
         media_type="application/json"
     )
 
@@ -89,5 +100,5 @@ async def health_check():
 async def healthz():
     return Response(status_code=200)
 
-# Dockerfile'daki CMD komutunu da güncelleyelim
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050"]
+# Dockerfile'daki CMD komutunu güncelleyelim
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050", "--no-access-log"]
