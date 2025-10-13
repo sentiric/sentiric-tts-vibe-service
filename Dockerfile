@@ -46,4 +46,4 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Sunucuyu başlat
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050", "--no-access-log"]
+CMD ["/app/.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050", "--no-access-log"]
