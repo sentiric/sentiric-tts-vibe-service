@@ -46,4 +46,4 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 14050 14051 14052
-CMD ["/app/.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050", "--log-config", "null"]
+CMD ["/app/.venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "14050", "--no-access-log"]
